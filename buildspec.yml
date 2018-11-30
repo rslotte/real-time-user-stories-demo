@@ -2,18 +2,38 @@ version: 0.2
 
 env:
   variables:
-    ENV: "dev"
+    AWS_ACCOUNT_ID: 600902720163
+    BASE_IMAGE_NAME: branching-demo
+    VPC_ID: vpc-5b49cf3c
+    SUBNET_IDS: subnet-3dd31766,subnet-828a32e5,subnet-ef1594a6
 
 phases:
   install:
     commands:
-      - $(aws ecr get-login --no-include-email --region eu-west-1)
+      - $(aws ecr get-login --no-include-email --region ${AWS_REGION})
   build:
     commands:
-      - docker build -t codebuild-demo .
-      - docker tag codebuild-demo:latest 600902720163.dkr.ecr.eu-west-1.amazonaws.com/codebuild-demo:latest
-      - docker push 600902720163.dkr.ecr.eu-west-1.amazonaws.com/codebuild-demo:latest
+      # Build and push Docker image
+      - SERVICE=$(echo ${CODEBUILD_WEBHOOK_TRIGGER} | cut -d"/" -f2)
+      - IMAGE_NAME=${BASE_IMAGE_NAME}/${SERVICE}
+      - IMAGE_TAG=$(git rev-parse HEAD)
+      - IMAGE_REGISTRY=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
+      - aws ecr create-repository --repository-name ${IMAGE_NAME} ||true
+      - docker build -t ${IMAGE_NAME} .
+      - docker tag ${IMAGE_NAME}:latest ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+      - docker push ${IMAGE_REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
+      # Deploy Docker image to Fargate using Cloudformation
+      - CMD=create-stack
+      - |
+        if aws cloudformation describe-stacks --stack-name branching-demo-${SERVICE} ; then
+          CMD=update-stack
+        fi
+      - |
+        aws cloudformation ${CMD} --stack-name branching-demo-${SERVICE} \
+          --template-body file://fargate.yml --parameters \
+          ParameterKey=ServiceName,ParameterValue=${SERVICE} \
+          ParameterKey=ImageName,ParameterValue=${IMAGE_REGISTRY}/${IMAGE_NAME} \
+          ParameterKey=ImageTag,ParameterValue=${IMAGE_TAG}
   post_build:
     commands:
-      - echo "post_build"
-
+      - echo "Send notification to Slack!"
