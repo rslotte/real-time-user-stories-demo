@@ -7,11 +7,10 @@ Parameters:
     Type: String
     Description: >-
       The name of the Codebuild project
-  ServiceRole:
+  RepositoryLocation:
     Type: String
-    Default: service-role/codebuild-github-branches-service-role
     Description: >-
-      The name of the CodeBuild service role
+      The HTTPS clone URL for the Github repository
 
 Resources:
   BuildProject:
@@ -27,10 +26,33 @@ Resources:
         EnvironmentVariables:
           - Name: AWS_ACCOUNT_ID
             Value: !Ref 'AWS::AccountId'
-      ServiceRole:
-        - !Join [ "", [ "arn:aws:iam::", !Ref "AWS::AccountId", ":role/", !Ref ServiceRole ] ]
+      ServiceRole: !Ref BuildProjectRole
       Source:
         Type: GITHUB
-        Location: https://github.com/rslotte/codebuild-demo.git
+        Location: !Ref RepositoryLocation
       Triggers:
         Webhook: true
+
+  BuildProjectRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName:
+        !Join [ '-', [ !Ref ProjectName, !Ref 'AWS::Region'] ]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: codebuild.amazonaws.com
+          Action: sts:AssumeRole
+      Policies:
+        - PolicyName:
+            !Join [ '-', [ !Ref ProjectName, !Ref 'AWS::Region'] ]
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - '*'
+                Resource:
+                  - '*'
