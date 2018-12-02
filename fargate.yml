@@ -13,7 +13,6 @@ Parameters:
       The VPC to use
   Subnets:
     Type: List<AWS::EC2::Subnet::Id>
-    Default: subnet-3dd31766,subnet-828a32e5,subnet-ef1594a6
     Description: >-
       The subnets to run the container in.
   ImageName:
