@@ -120,10 +120,14 @@ Resources:
       Port: 80
       Protocol: HTTP
       HealthCheckPath: /index.html
+      HealthCheckIntervalSeconds: 5
+      HealthCheckTimeoutSeconds: 2
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 2
       TargetType: ip
       TargetGroupAttributes:
         - Key: deregistration_delay.timeout_seconds
-          Value: '60'
+          Value: '0'
 
   Route53ARecordAlias:
     Type: AWS::Route53::RecordSetGroup
