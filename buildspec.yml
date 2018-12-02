@@ -2,7 +2,6 @@ version: 0.2
 
 env:
   variables:
-    AWS_ACCOUNT_ID: 600902720163
     BASE_IMAGE_NAME: branching-demo
     VPC_ID: vpc-5b49cf3c
     SUBNET_IDS: subnet-3dd31766,subnet-828a32e5,subnet-ef1594a6

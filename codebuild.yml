@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Codebuild Github Feature Branch Builder
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Main Configuration
+        Parameters:
+          - ProjectName
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: >-
+      The name of the Codebuild project
+  ServiceRole:
+    Type: String
+    Default: service-role/codebuild-github-branches-service-role
+    Description: >-
+      The name of the CodeBuild service role
+
+Resources:
+  BuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Ref ProjectName
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/docker:17.09.0
+        Type: LINUX_CONTAINER
+        EnvironmentVariables:
+        - Name: AWS_ACCOUNT_ID
+          Value: !Ref 'AWS::AccountId'
+      ServiceRole:
+        - !Join [ "", [ "arn:aws:iam::", !Ref "AWS::AccountId", ":role/", !Ref ServiceRole ] ]
+      Source:
+        Type: GITHUB
+        Location: https://github.com/rslotte/codebuild-demo.git
+      Triggers:
+        Webhook: true
