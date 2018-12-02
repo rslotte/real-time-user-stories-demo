@@ -1,0 +1,137 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Fargate feature branch deployment
+
+Parameters:
+  ServiceName:
+    Type: String
+    Description: >-
+      The name of the service
+  VPC:
+    Type: AWS::EC2::VPC::Id
+    Description: >-
+      The VPC to use
+  Subnets:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: >-
+      The subnets to run the container in.
+  ImageName:
+    Type: String
+    Description: >-
+      The container image to run
+  ImageTag:
+    Type: String
+    Description: >-
+      The container image tag to run
+  HostedZoneName:
+    Type: String
+    Default: rob.squadzero.io.
+    Description: >-
+      The name of the hosted zone in Route53
+
+Resources:
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Ref ServiceName
+
+  Service:
+    Type: AWS::ECS::Service
+    DependsOn: ALBLoadBalancerListener
+    Properties:
+      Cluster: !Ref Cluster
+      ServiceName: !Ref ServiceName
+      LaunchType: FARGATE
+      DesiredCount: 1
+      TaskDefinition: !Ref TaskDefinition
+      LoadBalancers:
+        - ContainerName: !Ref ServiceName
+          ContainerPort: 80
+          TargetGroupArn: !Ref ALBDefaultTargetGroup
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          Subnets: !Ref Subnets
+          SecurityGroups:
+            - !Ref TaskSecurityGroup
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Cpu: 256
+      RequiresCompatibilities:
+        - FARGATE
+      Family: !Ref ServiceName
+      NetworkMode: awsvpc
+      # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_execution_IAM_role.html
+      ExecutionRoleArn: ecsTaskExecutionRole
+      Memory: 0.5GB
+      ContainerDefinitions:
+        - Name: !Ref ServiceName
+          Essential: true
+          Image: !Join [ ':', [ !Ref ImageName, !Ref ImageTag ] ]
+          PortMappings:
+            - ContainerPort: 80
+
+  TaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Fargate SG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB SG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: 0.0.0.0/0
+
+  ALBLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Subnets: !Ref Subnets
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+
+  ALBLoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ALBLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref ALBDefaultTargetGroup
+
+  ALBDefaultTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DependsOn: ALBLoadBalancer
+    Properties:
+      VpcId: !Ref VPC
+      Port: 80
+      Protocol: HTTP
+      HealthCheckPath: /index.html
+      TargetType: ip
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '60'
+
+  Route53ARecordAlias:
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneName: !Ref HostedZoneName
+      RecordSets:
+      - Name: !Join [ '', [ !Ref ServiceName, '.', !Ref HostedZoneName ] ]
+        Type: A
+        AliasTarget:
+          HostedZoneId: !GetAtt ALBLoadBalancer.CanonicalHostedZoneID
+          DNSName: !GetAtt ALBLoadBalancer.DNSName
