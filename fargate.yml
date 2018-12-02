@@ -129,13 +129,13 @@ Resources:
         - Key: deregistration_delay.timeout_seconds
           Value: '0'
 
-  Route53ARecordAlias:
+  Route53ARecord:
     Type: AWS::Route53::RecordSetGroup
     Properties:
       HostedZoneName: !Ref HostedZoneName
       RecordSets:
       - Name: !Join [ '', [ !Ref ServiceName, '.', !Ref HostedZoneName ] ]
-        Type: A
-        AliasTarget:
-          HostedZoneId: !GetAtt ALBLoadBalancer.CanonicalHostedZoneID
-          DNSName: !GetAtt ALBLoadBalancer.DNSName
+        Type: CNAME
+        TTL: '10'
+        ResourceRecords:
+          - !GetAtt ALBLoadBalancer.DNSName
