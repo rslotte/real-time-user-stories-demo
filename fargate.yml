@@ -2,21 +2,6 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: >-
   Fargate feature branch deployment
 
-Metadata:
-  AWS::CloudFormation::Interface:
-    ParameterGroups:
-      - Label:
-          default: Main Configuration
-        Parameters:
-          - ServiceName
-          - VPC
-          - PublicSubnets
-      - Label:
-          default: Container Configuration
-        Parameters:
-          - ImageName
-          - ImageTag
-
 Parameters:
   ServiceName:
     Type: String
@@ -24,14 +9,13 @@ Parameters:
       The name of the service
   VPC:
     Type: AWS::EC2::VPC::Id
-    Default: vpc-5b49cf3c
     Description: >-
       The VPC to use
-  PublicSubnets:
+  Subnets:
     Type: List<AWS::EC2::Subnet::Id>
     Default: subnet-3dd31766,subnet-828a32e5,subnet-ef1594a6
     Description: >-
-      The PUBLIC subnets to run the container in.
+      The subnets to run the container in.
   ImageName:
     Type: String
     Description: >-
@@ -67,8 +51,8 @@ Resources:
           TargetGroupArn: !Ref ALBDefaultTargetGroup
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: ENABLED
-          Subnets: !Ref PublicSubnets
+          AssignPublicIp: DISABLED
+          Subnets: !Ref Subnets
           SecurityGroups:
             - !Ref SecurityGroup
 
@@ -104,7 +88,7 @@ Resources:
   ALBLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Subnets: !Ref PublicSubnets
+      Subnets: !Ref Subnets
       SecurityGroups:
         - !Ref SecurityGroup
 
@@ -125,14 +109,7 @@ Resources:
       VpcId: !Ref VPC
       Port: 80
       Protocol: HTTP
-      Matcher:
-        HttpCode: 200-299
-      HealthCheckIntervalSeconds: 80
       HealthCheckPath: /index.html
-      HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 50
-      HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 5
       TargetType: ip
       TargetGroupAttributes:
         - Key: deregistration_delay.timeout_seconds

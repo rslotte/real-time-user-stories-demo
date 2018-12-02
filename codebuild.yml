@@ -2,14 +2,6 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: >-
   Codebuild Github Feature Branch Builder
 
-Metadata:
-  AWS::CloudFormation::Interface:
-    ParameterGroups:
-      - Label:
-          default: Main Configuration
-        Parameters:
-          - ProjectName
-
 Parameters:
   ProjectName:
     Type: String
@@ -33,8 +25,8 @@ Resources:
         Image: aws/codebuild/docker:17.09.0
         Type: LINUX_CONTAINER
         EnvironmentVariables:
-        - Name: AWS_ACCOUNT_ID
-          Value: !Ref 'AWS::AccountId'
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref 'AWS::AccountId'
       ServiceRole:
         - !Join [ "", [ "arn:aws:iam::", !Ref "AWS::AccountId", ":role/", !Ref ServiceRole ] ]
       Source:
