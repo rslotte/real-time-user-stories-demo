@@ -51,10 +51,10 @@ Resources:
           TargetGroupArn: !Ref ALBDefaultTargetGroup
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: DISABLED
+          AssignPublicIp: ENABLED
           Subnets: !Ref Subnets
           SecurityGroups:
-            - !Ref SecurityGroup
+            - !Ref TaskSecurityGroup
 
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -74,10 +74,21 @@ Resources:
           PortMappings:
             - ContainerPort: 80
 
-  SecurityGroup:
+  TaskSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Fargate SG
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '80'
+          ToPort: '80'
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB SG
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -90,7 +101,7 @@ Resources:
     Properties:
       Subnets: !Ref Subnets
       SecurityGroups:
-        - !Ref SecurityGroup
+        - !Ref ALBSecurityGroup
 
   ALBLoadBalancerListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
