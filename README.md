@@ -17,9 +17,8 @@ ParameterKey=RepositoryLocation,ParameterValue=https://github.com/rslotte/real-t
 
 Modify the trigger if you only want to build on a specific branch naming pattern:
 ```
-$ aws codebuild update-webhook --project-name branch-deploy --branch-filter ^story\\d+$
+$ aws codebuild update-webhook --project-name real-time-user-stories-codebuild --branch-filter ^story\\d+$
 ```
-
 
 ## Feature branches on Fargate
 
