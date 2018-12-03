@@ -2,7 +2,7 @@ version: 0.2
 
 env:
   variables:
-    BASE_NAME: branch-demo
+    BASE_NAME: real-time-user-stories
     VPC_ID: vpc-5b49cf3c
     SUBNET_IDS: subnet-3dd31766\,subnet-828a32e5\,subnet-ef1594a6
     HOSTED_ZONE_NAME: rob.squadzero.io.

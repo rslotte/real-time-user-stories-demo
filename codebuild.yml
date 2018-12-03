@@ -1,10 +1,11 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  Codebuild Github Feature Branch Builder
+  Codebuild Github User Story Builder
 
 Parameters:
   ProjectName:
     Type: String
+    Default: real-time-user-stories-codebuild
     Description: >-
       The name of the Codebuild project
   RepositoryLocation:
@@ -53,6 +54,41 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - cloudformation:*
+                Resource:
                   - '*'
+              - Effect: Allow
+                Action:
+                  - ec2:*
+                Resource:
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - ecr:*
+                Resource:
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - ecs:*
+                Resource:
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - elasticloadbalancing:*
+                Resource:
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - logs:*
+                Resource:
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - iam:PassRole
+                Resource:
+                  - '*'
+              - Effect: Allow
+                Action:
+                  - route53:*
                 Resource:
                   - '*'
