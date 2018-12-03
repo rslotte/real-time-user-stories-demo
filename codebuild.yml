@@ -1,10 +1,11 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  Codebuild Github Feature Branch Builder
+  Codebuild Github User Story Builder
 
 Parameters:
   ProjectName:
     Type: String
+    Default: real-time-user-stories-codebuild
     Description: >-
       The name of the Codebuild project
   RepositoryLocation:
